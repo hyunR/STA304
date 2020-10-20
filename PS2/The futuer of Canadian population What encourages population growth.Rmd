@@ -37,6 +37,8 @@ What makes Canadian to have more children and leads to population growth?
 
 In this paper, I will use Statistics Canada's General Social Survey data for 2017 to figure out which factor affects individual's number of children. 
 
+The code used for this analysis is avaliable on https://github.com/hyunR/STA304/PS2 and the data is avaliable on http://www.chass.utoronto.ca/ 
+
 ## Data
 
 The data that I will use for this paper is `General Social Survey` `[4]`(and I will call it as `GSS` from now on) data for 2017 provided by Statistics Canada that has all non-institutionlaized persons 15 years of age and older, and living in the 10 provinces of Canada as its' target population. `GSS` has two primary objectives that; 1) To gather data on social trend in order to monitor changes in the living conditions and well-beings of Canadians over time; 2) To provice informations on specific social policy issues of current or emerging inters. And since `GSS` is well collected data that covers large Canadian population and many different areas of interes, it is a perfect data to work with to answer my question `Which factor encourages population growth?`
