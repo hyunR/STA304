@@ -1,0 +1,213 @@
+---
+title: "The Futuer of Canadian Population: What Encourages Population Growth"
+author: "Hyunseok Rha"
+date: "2020-10-19"
+output: pdf_document
+url: https://github.com/hyunR/STA304/PS2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(survey)
+library(jtools)
+gss <- read_csv("gss.csv")
+```
+
+## The Futuer of Canadian Population: What Encourages Population Growth
+
+# Hyunseok Rha
+# 2020-10-19
+
+## Abstract
+
+With Statistics Canada's General Social Survey 2017 data, we have found that an individual's number of children is positively affected by these 3 factors; age, as an individual's age goes up he/she tends to have more children, if an individual was born in Canada then he/she tends to have more children than who doesn't and as individual's family income goes up, he/she tends to have more children than who does not have higher family income.
+
+## Introduction
+
+As of 2020, the estimated world population is about 7.8 Billion `[1]`. It may seems overwhelming, but the annual population growth rate is decreasing. And for the most of the developed contury, the number of population is starting decreasing instead of increasing. 
+
+For example, Japan has around 5.1 trillion US dollars of Gross Domestic Product(GDP) for 2019 `[2]` and Japan has 3rd largest GDP in the world which indicates that Japan in one of the developed country. However, Japanese population was at peak at 2010 with around 128 million people but as of 2020 the population is around 126 million which is decreased about 2 million over the last 5 years`[3]`. 
+
+On top of that, for Japan's median age of population was increased from 44.7 for 2010 to 48.4 for 2020 `[3]`, which indicates that the over all population is getting old and the rate of aging is higher than the rate of new born. 
+
+Then what about Canada?
+
+What makes Canadian to have more children and leads to population growth? 
+
+In this paper, I will use Statistics Canada's General Social Survey data for 2017 to figure out which factor affects individual's number of children. 
+
+## Data
+
+The data that I will use for this paper is `General Social Survey` `[4]`(and I will call it as `GSS` from now on) data for 2017 provided by Statistics Canada that has all non-institutionlaized persons 15 years of age and older, and living in the 10 provinces of Canada as its' target population. `GSS` has two primary objectives that; 1) To gather data on social trend in order to monitor changes in the living conditions and well-beings of Canadians over time; 2) To provice informations on specific social policy issues of current or emerging inters. And since `GSS` is well collected data that covers large Canadian population and many different areas of interes, it is a perfect data to work with to answer my question `Which factor encourages population growth?`
+
+The data I have used is a cleaned version of original `GSS` 2017 data that the name of columns are changed into more intuitive names and the numer labeled values are converted into more human friendly names such like for the age column, from values of `1, 2` to `15 to 19 years, 20 to 24 years`. 
+
+`GSS` 2017 data contains total 20602 entries with 81 columns. And I will focus on the `total_children` value that indicates how many children an individual has and I will treat it as an indicator that as `total_children` increases, an individual tends to have more children and it leads population growth.
+
+Here's a graph that shows the distribution of population based on their age group so we can have some idea about how's the data looks like. 
+
+```{r, fig.align='center'}
+gss %>%
+  mutate(age_group = cut(gss$age, breaks = seq(15, 81, 9), right = FALSE)) %>%
+  filter(!is.na(age_group)) %>%
+  ggplot(aes(x = age_group, fill=age_group)) + 
+  geom_bar() + 
+  theme(legend.position="none") +
+  xlab("age group") +
+  ylab("number of population") +
+  ggtitle("Distribution of population by age groop")
+```
+
+\newpage
+
+We can have some insights about what affects the number of total children based on different factor. 
+
+And here's some graph to show the relationshop between each factor and the total number of children. 
+
+For the age group,
+```{r, fig.width = 6,fig.height= 6, fig.align='center'}
+gss %>%
+  mutate(age_group = cut(gss$age, breaks = seq(15, 81, 9), right = FALSE)) %>%
+  filter(!is.na(age_group)) %>%
+  filter(!is.na(total_children)) %>%
+  ggplot(aes(x=age_group, y=as.numeric(total_children), fill=age_group)) + 
+  theme(legend.position="none") +
+  geom_boxplot() +
+  xlab("age group") +
+  ylab("number of total children") +
+  ggtitle("Number of total children by age group")
+```
+
+\newpage
+
+For the individual's place of birth,
+```{r, fig.width = 4,fig.height= 3, fig.align='center'}
+gss %>%
+  filter(!is.na(place_birth_canada)) %>%
+  filter(!is.na(total_children)) %>%
+  ggplot(aes(x=place_birth_canada, y=as.numeric(total_children), fill=place_birth_canada)) + 
+  theme(legend.position="none") +
+  geom_boxplot()  +
+  xlab("Place of birth") +
+  ylab("number of total children") +
+  ggtitle("Number of total children by individual's place of birth")
+```
+
+For the family income category,
+```{r, fig.width = 6,fig.height= 4, fig.align='center'}
+gss %>%
+  filter(!is.na(income_family)) %>%
+  filter(!is.na(total_children)) %>%
+  ggplot(aes(
+    x=factor(income_family, level = c("Less than $25,000", "$25,000 to $49,999", "$50,000 to $74,999", "$75,000 to $99,999", "$100,000 to $ 124,999", "$125,000 and more")), 
+    y=as.numeric(total_children), 
+    fill=income_family)) + 
+  theme(legend.position="none", axis.text.x = element_text(angle=45, hjust=1)) +
+  geom_boxplot() +
+  xlab("Family income category") +
+  ylab("number of total children") +
+  ggtitle("Number of total children by family income category")
+```
+
+\newpage
+
+## Model
+
+The model I will be used is survey weighted regression.
+
+Since the `GSS` is a survey data, we can think the entire Canadians as population and `GSS` data as sample.    
+
+The general form of the model looks like $y_i = \beta_0+\beta_1 x_{1i}+\beta_2 x_{2i}+\dots+\beta_kx_{ki}+\epsilon_i$ where $y_i$ is the value of the study, in our case it is the total number of children. And each $\beta_k$ represents the factor that affects the total number of children. 
+
+For our model, we will use 5 parameters that are age, place_birth_canada, income_family, self_rated_health and self_rated_mental_health to estimate the number of total children and see what is the relationship between each factor and the total number of children. 
+
+\newpage
+
+Note: the number of population for 2017 is from Statistics Canada `[5]` 
+```{r}
+gss_cleaned <- gss %>%
+  filter(!is.na(total_children)) %>%
+  filter(!is.na(age)) %>%
+  filter(!is.na(place_birth_canada)) %>%
+  filter(!is.na(income_family)) %>%
+  filter(!is.na(self_rated_health)) %>%
+  filter(!is.na(self_rated_mental_health))
+
+num_of_children <- gss_cleaned$total_children
+age <- gss_cleaned$age
+place_birth_canada <- as.factor(gss_cleaned$place_birth_canada)
+income_family <- as.factor(gss_cleaned$income_family)
+self_rated_health <- gss_cleaned$self_rated_health 
+self_rated_mental_health <- gss_cleaned$self_rated_mental_health
+
+num_of_children_data = tibble(num_of_children, age, place_birth_canada, income_family, self_rated_health, self_rated_mental_health)
+
+N = 36708083
+n = length(num_of_children)
+fpc.srs = rep(N, n)
+
+totalChildren.design <- svydesign(id=~1, data=num_of_children_data, fpc=fpc.srs)
+
+mysvylm <- svyglm(num_of_children ~ age + as.factor(place_birth_canada) + as.factor(income_family) + self_rated_health + self_rated_mental_health, totalChildren.design)
+summ(mysvylm)
+```
+
+
+## Results
+
+Now the model is avaliable and we have an insights for each parameter that how they affect the total number of children. 
+
+Let's have a look at each of them to interpret the result.
+
+#### age 
+
+We can see from the model output that as an individual's age goes up by 1, the number of total children goes up by 0.04. And it makes sence in general that the change of having a child is depending on individual's age.
+
+#### place_birth_canada
+
+It is quite interesting that, for the `place_birth_canada`, response `Don't Know`(which is equivalent to `Born in Canada`) has quite significant impact that the number of total children increases by 0.87 if it is the case. 
+
+#### income_family
+
+We can see as individual's family income increase, the estimated number of total children increase. The difference between the lowest income category versus highes income category is around 0.41
+
+#### self_rated_health
+
+We can see when an individual's self rated health is poor it has more positive impact on the total number of children than when the health excellent. 
+
+#### self_rated_mental_health
+
+We can see when an individual's self rated metal health is poor it has more negative impact on the total number of children which is quite different behaviour compare to the self_rated_health metric. 
+
+
+The factors that have positive impact on the total number of children are higher age, born in Canada and high income. 
+
+## Discussion
+
+We can say that age plays an important role such that as age goes up, the number of total children also goes up. Which is quite trivial since the number of total children is an accumulative value over an invididual's life span. And the two interesting factors are if an individual born in Canada, then he/she tends to have more children and if an individual's family income is high, then he/she tends to have more children. I can say that individual's financial situation affects the number of children just like general thoughts that financial stability is important for population growth. And I would treat Whether an individual is born in Canada or not as an indicator of individual's status in Canada that contains both citizenship and life status. If an individual was born in Canada, then it is more likely that the individual has citizenship and family within Canada that can be a source of life stability. 
+
+# Weaknesses
+
+The weakneeses of my analysis are that the number of factor is limited and treating total number of children with all the age group can add noise to the result.
+
+As we can see, age acts as a significant factor that affects total number of children and we can have more percise insight when we break down the reponse into age group and do the analysis for each of them.
+
+# Next Steps
+
+The next step will be, change the way of analysis that we analyze the response for each age group.On top of that, we can do the similar analysis with different year's `GSS` data. This will give us insight that how's each factor's impact has been changed overtime such as modern people's number of children tend to be affected by family income. 
+
+Also with different year's data, we can also predict how's the number of population would change in future based on data. 
+
+
+## References
+
+[1] https://www.worldometers.info/world-population/
+
+[2] https://tradingeconomics.com/japan/gdp
+
+[3] https://www.worldometers.info/world-population/japan-population/ 
+
+[4] Statistics Canada. (2017). General social survey (GSS), 2015: Cycle 29, time use. [Public use microdata file and codebook]. Ottawa, ON: Statistics Canada. Retrieved from http://www.chass.utoronto.ca/ 
+ 
+[5] https://www150.statcan.gc.ca/n1/pub/12-581-x/2018000/pop-eng.htm 
