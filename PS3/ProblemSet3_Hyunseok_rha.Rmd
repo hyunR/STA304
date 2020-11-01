@@ -78,11 +78,6 @@ census_data %>%
 
 # Results
 
-```{r} 
-census_data %>%
-  summarise(Average = mean(predict_vote_trump))
-```
-
 Based on my post-stratification calculation with my multilevel logistic regression model, the portion of population that vote for Donal Trump, which is $\hat y^{PS}$, about 10.1%.
 
 # Discussion
